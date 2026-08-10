@@ -71,10 +71,25 @@ https://script.google.com/macros/s/AKfy…/exec
 
 ### 5. Bật trong app
 
-Mở app → tab **Lịch trình** hoặc **Chi phí** → thẻ **Đồng bộ Google Sheet** → **Bật đồng bộ**.
-Dán URL và token vừa đặt → **Lưu và đồng bộ**.
+**Cách A — cấu hình sẵn, mở là chạy (khuyên dùng).** Đặt token vào biến môi trường lúc
+build, mọi máy mở app là tự đồng bộ, không phải gõ gì:
 
-Xong. Điện thoại khác chỉ cần dán đúng URL + token đó là thấy chung dữ liệu.
+- Trên Vercel: **Settings → Environment Variables** thêm `NEXT_PUBLIC_SHEETS_TOKEN` =
+  chuỗi token của bạn. URL đã nằm sẵn trong source; muốn đổi thì thêm
+  `NEXT_PUBLIC_SHEETS_URL`.
+- Chạy máy mình: chép `.env.example` thành `.env.local` rồi điền.
+
+**Cách B — nhập tay trên từng máy.** Mở app → tab **Lịch trình** hoặc **Chi phí** → thẻ
+**Đồng bộ Google Sheet** → **Bật đồng bộ** → dán URL và token → **Lưu và đồng bộ**.
+
+Nhập tay đè lên cấu hình sẵn, nên cách B vẫn dùng được để trỏ sang sheet khác.
+
+> **Về việc để token trong app:** app là trang tĩnh, không có backend, nên mọi thứ nhúng lúc
+> build đều nằm trong file JS gửi xuống trình duyệt — ai mở DevTools trên trang đã deploy
+> đều đọc được token. Không có cách nào giấu trong app tĩnh. Token chặn người tình cờ biết
+> URL, không chặn người xem mã nguồn trang. Vì vậy đừng commit token vào repo (repo này công
+> khai), và coi đây là khoá cửa nhà chứ không phải két sắt. Lỡ lộ thì đổi `TOKEN` trong
+> Code.gs rồi Deploy lại là thu hồi ngay.
 
 ---
 

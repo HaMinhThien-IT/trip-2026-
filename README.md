@@ -68,7 +68,7 @@ Vercel tự nhận diện Next.js — không cần đặt biến môi trường 
 | Framework Preset | Next.js (tự nhận) |
 | Build Command | `npm run build` (mặc định) |
 | Output Directory | để mặc định |
-| Environment Variables | không cần — `NEXT_PUBLIC_BASE_PATH` để trống nên app chạy ở `/` |
+| Environment Variables | `NEXT_PUBLIC_SHEETS_TOKEN` nếu muốn app tự bật đồng bộ Google Sheet (xem [`.env.example`](.env.example)); ngoài ra không cần gì |
 
 Mỗi lần push lên `main` là Vercel tự deploy lại.
 
