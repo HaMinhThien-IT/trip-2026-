@@ -13,6 +13,21 @@ const beVietnam = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: 'Lịch trình du lịch',
   description: 'Trợ lý lịch trình khi đang đi du lịch',
+  // iOS chỉ mở dạng app độc lập khi có thẻ apple-mobile-web-app-capable
+  appleWebApp: {
+    capable: true,
+    title: 'Lịch trình',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  other: {
+    // Next chỉ sinh tên chuẩn mới `mobile-web-app-capable`; iOS đời cũ vẫn
+    // đọc tên cũ, thiếu nó là app mở kèm thanh địa chỉ Safari
+    'apple-mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
