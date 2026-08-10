@@ -10,6 +10,8 @@ type CachedWorkbook = {
   bytes: ArrayBuffer;
   fileName: string;
   savedAt: string;
+  /** true khi workbook trong cache có thay đổi chưa xuất ra file Excel */
+  dirty: boolean;
 };
 
 function openDb(): Promise<IDBDatabase> {
@@ -25,14 +27,18 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function cacheWorkbook(bytes: ArrayBuffer, fileName: string): Promise<void> {
+export async function cacheWorkbook(
+  bytes: ArrayBuffer,
+  fileName: string,
+  dirty: boolean,
+): Promise<void> {
   if (typeof indexedDB === 'undefined') return;
   try {
     const db = await openDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(
-        { bytes, fileName, savedAt: new Date().toISOString() } satisfies CachedWorkbook,
+        { bytes, fileName, savedAt: new Date().toISOString(), dirty } satisfies CachedWorkbook,
         KEY,
       );
       tx.oncomplete = () => resolve();
