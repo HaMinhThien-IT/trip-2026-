@@ -195,6 +195,30 @@ function sheetTitle(name: string): string {
   return name.replace(/\s*-\s*/g, ' · ').trim();
 }
 
+/** "Ngày 1 - Hội An" -> 1; không có số thì trả null */
+function declaredDayNumber(sheetName: string): number | null {
+  const match = normalize(sheetName).match(/\bngay\s*(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * Trong một sheet "Ngày N", ngày chính là ngày chứa nhiều hoạt động nhất —
+ * các mốc dạng "18:00 lên xe đêm hôm trước" chỉ là chặng di chuyển dẫn vào
+ * ngày đó, không phải Ngày N. Hòa thì lấy ngày sớm nhất.
+ */
+function findMainDateIndex(dateOrder: string[], countByDate: Map<string, number>): number {
+  let bestIndex = 0;
+  let bestCount = -1;
+  dateOrder.forEach((date, index) => {
+    const count = countByDate.get(date) ?? 0;
+    if (count > bestCount) {
+      bestCount = count;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
 /** Ngày mặc định khi cột thời gian không ghi ngày ở đâu cả */
 function fallbackDate(sheetName: string, sheetIndex: number): string {
   const match = sheetName.match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
@@ -314,16 +338,32 @@ function parseSheet(workbook: WorkBook, sheetName: string, sheetIndex: number): 
     byDate.get(activity.date)!.push(activity);
   });
 
-  return dateOrder.map((date) => ({
-    id: `${sheetName}__${date}`,
-    date,
-    // Tiêu đề lấy từ tên sheet; phần ngày do UI ghép vào để tránh lặp
-    title: sheetTitle(sheetName),
-    activities: byDate
-      .get(date)!
-      .slice()
-      .sort((a, b) => a.startMinutes - b.startMinutes),
-  }));
+  // Đánh số ngày quanh ngày chính của sheet: ngày trước đó là chặng xuất phát,
+  // không mang số; ngày chính mang số ghi trong tên sheet.
+  const countByDate = new Map(dateOrder.map((date) => [date, byDate.get(date)!.length]));
+  const mainIndex = findMainDateIndex(dateOrder, countByDate);
+  const baseNumber = declaredDayNumber(sheetName);
+
+  return dateOrder.map((date, index) => {
+    const offset = index - mainIndex;
+    const dayNumber = baseNumber === null ? null : baseNumber + offset;
+    const numbered = dayNumber !== null && dayNumber >= 1;
+    // Sheet không ghi số ngày → để trống, parseTrip sẽ đánh số tuần tự sau
+    const label = numbered ? `Ngày ${dayNumber}` : baseNumber === null ? '' : 'Xuất phát';
+
+    return {
+      id: `${sheetName}__${date}`,
+      date,
+      // Tiêu đề lấy từ tên sheet; phần ngày do UI ghép vào để tránh lặp
+      title: sheetTitle(sheetName),
+      dayNumber: numbered ? dayNumber : null,
+      label,
+      activities: byDate
+        .get(date)!
+        .slice()
+        .sort((a, b) => a.startMinutes - b.startMinutes),
+    };
+  });
 }
 
 /** Tên chuyến đi: lấy từ dòng tiêu đề của sheet đầu tiên nếu có */
@@ -348,6 +388,20 @@ function detectTripName(workbook: WorkBook, sheetNames: string[]): string {
 export function parseTrip(workbook: WorkBook): Trip {
   const itinerarySheets = workbook.SheetNames.filter((name) => !APP_SHEETS.has(name));
   const days = itinerarySheets.flatMap((name, index) => parseSheet(workbook, name, index));
+
+  // Ngày nào sheet không ghi số thì đánh tiếp theo ngày đã đánh số gần nhất
+  let lastNumber = 0;
+  days.forEach((day) => {
+    if (day.dayNumber !== null) {
+      lastNumber = day.dayNumber;
+      return;
+    }
+    if (day.label === '') {
+      lastNumber += 1;
+      day.dayNumber = lastNumber;
+      day.label = `Ngày ${lastNumber}`;
+    }
+  });
 
   return {
     name: detectTripName(workbook, itinerarySheets),

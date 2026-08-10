@@ -1,4 +1,7 @@
-# Ngày 1 – Đà Nẵng → Hội An (13–14/07)
+# Ngày 1 – Đà Nẵng → Hội An
+
+Tối **13/07** là chặng xuất phát (lên xe đêm ở Buôn Ma Thuột), chưa tính là ngày 1.
+**Ngày 1** của chuyến đi bắt đầu sáng **14/07** khi tới Đà Nẵng.
 
 ## Lịch trình chi tiết
 
