@@ -8,8 +8,16 @@
  * Hướng dẫn cài đặt: xem google-sheets/README.md
  */
 
-/** Đổi thành chuỗi bí mật của bạn, và điền đúng chuỗi đó trong app */
-const TOKEN = 'DOI-CHUOI-NAY';
+/**
+ * Chuỗi bí mật do BẠN TỰ ĐẶT — không phải thứ Google cấp, cũng không phải
+ * mật khẩu tài khoản Google. Cứ nghĩ ra một chuỗi khó đoán, ví dụ:
+ *
+ *   const TOKEN = 'hoian-2026-76eig7tb';
+ *
+ * Rồi gõ đúng chuỗi đó vào ô "Token bí mật" trong app. Hai nơi phải giống hệt.
+ * Sai token thì script từ chối, nên lỡ lộ URL chỉ cần đổi chuỗi này.
+ */
+const TOKEN = 'DAT-CHUOI-BI-MAT-CUA-BAN-O-DAY';
 
 const EXPENSES_SHEET = 'Expenses';
 const SELECTIONS_SHEET = 'Selections';

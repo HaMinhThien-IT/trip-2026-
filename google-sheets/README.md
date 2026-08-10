@@ -31,13 +31,24 @@ Trong Google Sheet vừa tạo: **Extensions → Apps Script**.
 Xóa hết nội dung `Code.gs` đang có, dán toàn bộ nội dung file
 [`Code.gs`](Code.gs) trong thư mục này vào.
 
-Sửa dòng đầu:
+Sửa dòng `TOKEN` ở đầu file:
 
 ```js
-const TOKEN = 'DOI-CHUOI-NAY';
+const TOKEN = 'DAT-CHUOI-BI-MAT-CUA-BAN-O-DAY';
 ```
 
-thành một chuỗi bí mật của riêng bạn, ví dụ `hoian2026-x7k2`. Bấm **Save**.
+**Chuỗi này bạn tự nghĩ ra** — không phải thứ Google cấp, không phải API key, và tuyệt đối
+không phải mật khẩu tài khoản Google. Cứ đặt một chuỗi khó đoán, ví dụ:
+
+```js
+const TOKEN = 'hoian-2026-76eig7tb';
+```
+
+Nhớ chuỗi này, lát nữa gõ lại đúng y hệt vào app. Bấm **Save**.
+
+> Tác dụng: Web App URL là công khai, ai có URL cũng gọi được. Token là lớp chặn — sai token
+> thì script trả về *"Sai token."* và không đọc/ghi được gì. Lỡ lộ URL thì chỉ cần đổi chuỗi
+> này là mọi thiết bị cũ mất quyền ngay.
 
 ### 4. Deploy thành Web App
 

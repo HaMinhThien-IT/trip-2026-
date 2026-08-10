@@ -130,11 +130,15 @@ export function SyncCard() {
               <label htmlFor="sheets-token" className="text-sm font-semibold">
                 Token bí mật
               </label>
+              <p className="text-xs text-muted">
+                Chuỗi bạn tự đặt ở dòng <code>const TOKEN</code> trong Code.gs — gõ lại đúng
+                y hệt.
+              </p>
               <input
                 id="sheets-token"
                 type="text"
                 autoComplete="off"
-                placeholder="Chuỗi đã đặt trong Code.gs"
+                placeholder="vd: hoian-2026-76eig7tb"
                 value={token}
                 onChange={(event) => setToken(event.target.value)}
                 className="mt-1 min-h-[52px] w-full rounded-2xl border border-soft-pink bg-white px-4 text-sm outline-none focus:border-primary"
