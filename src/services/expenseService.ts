@@ -1,12 +1,14 @@
 import type { Activity, Day } from '@/types/itinerary';
 import type { Expense } from '@/types/expense';
 
-export function nextExpenseId(expenses: Expense[]): string {
-  const max = expenses.reduce((highest, expense) => {
-    const match = expense.id.match(/EXP_(\d+)/);
-    return match ? Math.max(highest, Number(match[1])) : highest;
-  }, 0);
-  return `EXP_${String(max + 1).padStart(3, '0')}`;
+/**
+ * Mã khoản chi không trùng kể cả khi hai điện thoại cùng ghi lúc mất sóng rồi
+ * mới đồng bộ lên Google Sheet — thời điểm tạo cộng phần ngẫu nhiên.
+ */
+export function newExpenseId(): string {
+  const stamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `EXP_${stamp}${random}`;
 }
 
 export function formatVnd(amount: number): string {

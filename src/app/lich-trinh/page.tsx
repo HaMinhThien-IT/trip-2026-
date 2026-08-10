@@ -7,6 +7,7 @@ import { pickActiveDay, useCurrentActivity } from '@/hooks/useCurrentActivity';
 import { useActivitySheets } from '@/hooks/useActivitySheets';
 import { Timeline } from '@/components/Timeline';
 import { ExcelStatusCard } from '@/components/ExcelStatusCard';
+import { SyncCard } from '@/components/SyncCard';
 import { ErrorState, LoadingState } from '@/components/States';
 import { formatVnd, totalForDate } from '@/services/expenseService';
 
@@ -81,6 +82,8 @@ export default function ItineraryPage() {
           onOpenActivity={sheets.openActivity}
         />
       </section>
+
+      <SyncCard />
 
       <ExcelStatusCard />
 

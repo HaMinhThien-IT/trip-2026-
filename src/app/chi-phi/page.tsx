@@ -7,6 +7,7 @@ import { useNow } from '@/hooks/useNow';
 import { pickActiveDay } from '@/hooks/useCurrentActivity';
 import { useActivitySheets } from '@/hooks/useActivitySheets';
 import { ExcelStatusCard } from '@/components/ExcelStatusCard';
+import { SyncCard } from '@/components/SyncCard';
 import { ErrorState, LoadingState } from '@/components/States';
 import {
   formatVnd,
@@ -214,6 +215,8 @@ export default function ExpensesPage() {
           </ul>
         </section>
       ) : null}
+
+      <SyncCard />
 
       <ExcelStatusCard />
 

@@ -21,15 +21,34 @@ import {
   saveWorkbook,
   writeAppSheets,
 } from '@/services/excelService';
-import { nextExpenseId } from '@/services/expenseService';
+import { newExpenseId } from '@/services/expenseService';
 import { cacheWorkbook, loadCachedWorkbook } from '@/services/workbookCache';
+import {
+  pullWorkbook,
+  pushOps,
+  readConfig,
+  writeConfig,
+  type SheetsConfig,
+  type SyncOp,
+} from '@/services/sheetsService';
+import { enqueue, readAll, removeUpTo } from '@/services/syncQueue';
 
 /** File Excel mặc định đi kèm app, người dùng vẫn có thể import file khác */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const DEFAULT_WORKBOOK_URL = `${BASE_PATH}/lich-trinh.xlsx`;
 const DEFAULT_WORKBOOK_NAME = 'lich-trinh.xlsx';
+/** Tên hiển thị khi dữ liệu đến từ Google Sheet thay vì file trên máy */
+const SHEETS_FILE_NAME = 'Google Sheet';
 
 type Status = 'dang-tai' | 'san-sang' | 'loi';
+
+/** Trạng thái đồng bộ với Google Sheet, hiển thị trên UI */
+export type SyncState =
+  | 'tat' // chưa cấu hình Google Sheet
+  | 'dang-dong-bo'
+  | 'da-dong-bo'
+  | 'cho-mang' // có thao tác đang xếp hàng
+  | 'loi';
 
 type TripContextValue = {
   status: Status;
@@ -48,6 +67,12 @@ type TripContextValue = {
   selectOption: (activityKey: string, place: string, address?: string) => void;
   clearSelection: (activityKey: string) => void;
   exportExcel: () => Promise<'ghi-de' | 'tai-ve'>;
+  sheetsConfig: SheetsConfig | null;
+  syncState: SyncState;
+  syncError: string | null;
+  pendingOps: number;
+  saveSheetsConfig: (config: SheetsConfig | null) => Promise<void>;
+  syncNow: () => Promise<void>;
 };
 
 const TripContext = createContext<TripContextValue | null>(null);
@@ -61,10 +86,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [fileName, setFileName] = useState(DEFAULT_WORKBOOK_NAME);
   const [isDirty, setIsDirty] = useState(false);
   const [supportsWriteInPlace, setSupportsWriteInPlace] = useState(false);
+  const [sheetsConfig, setSheetsConfig] = useState<SheetsConfig | null>(null);
+  const [syncState, setSyncState] = useState<SyncState>('tat');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [pendingOps, setPendingOps] = useState(0);
 
   // Workbook giữ ngoài state React: object lớn, không cần render lại khi đổi
   const workbookRef = useRef<WorkBook | null>(null);
   const handleRef = useRef<FileSystemFileHandle | null>(null);
+  // Đọc trong callback nên giữ bản ref để không phải thêm vào dependency
+  const configRef = useRef<SheetsConfig | null>(null);
 
   const applyWorkbook = useCallback((workbook: WorkBook, name: string, dirty: boolean) => {
     workbookRef.current = workbook;
@@ -96,7 +127,73 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [applyWorkbook],
   );
 
-  // Nạp dữ liệu ban đầu: ưu tiên workbook đã cache, nếu không có thì dùng file mặc định
+  /** Ghi workbook lấy từ Google Sheet vào state và cache offline */
+  const applyRemoteWorkbook = useCallback(
+    async (workbook: WorkBook) => {
+      applyWorkbook(workbook, SHEETS_FILE_NAME, false);
+      const XLSX = await import('xlsx');
+      const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+      await cacheWorkbook(bytes, SHEETS_FILE_NAME, false);
+    },
+    [applyWorkbook],
+  );
+
+  /** Đẩy hết thao tác đang xếp hàng lên Google Sheet */
+  const flushQueue = useCallback(async (): Promise<boolean> => {
+    const config = configRef.current;
+    if (!config) return false;
+
+    const rows = await readAll();
+    if (rows.length === 0) return true;
+
+    await pushOps(
+      config,
+      rows.map((row) => row.op),
+    );
+    await removeUpTo(rows[rows.length - 1].seq);
+    setPendingOps(await readAll().then((rest) => rest.length));
+    return true;
+  }, []);
+
+  const syncNow = useCallback(async () => {
+    const config = configRef.current;
+    if (!config) return;
+
+    setSyncState('dang-dong-bo');
+    setSyncError(null);
+    try {
+      await flushQueue();
+      const workbook = await pullWorkbook(config);
+      await applyRemoteWorkbook(workbook);
+      setSyncState('da-dong-bo');
+    } catch (thrown) {
+      const remaining = await readAll();
+      setPendingOps(remaining.length);
+      setSyncError(thrown instanceof Error ? thrown.message : 'Không đồng bộ được.');
+      setSyncState(remaining.length > 0 ? 'cho-mang' : 'loi');
+    }
+  }, [applyRemoteWorkbook, flushQueue]);
+
+  /** Ghi thao tác vào hàng đợi rồi thử đẩy ngay; mất mạng thì để lại chờ */
+  const queueOp = useCallback(
+    async (op: SyncOp) => {
+      if (!configRef.current) return;
+      await enqueue(op);
+      setPendingOps((await readAll()).length);
+      try {
+        setSyncState('dang-dong-bo');
+        await flushQueue();
+        setSyncState('da-dong-bo');
+        setSyncError(null);
+      } catch (thrown) {
+        setSyncError(thrown instanceof Error ? thrown.message : 'Chưa đẩy lên được.');
+        setSyncState('cho-mang');
+      }
+    },
+    [flushQueue],
+  );
+
+  // Nạp dữ liệu ban đầu: Google Sheet (nếu đã cấu hình) -> cache -> file mặc định
   useEffect(() => {
     let cancelled = false;
 
@@ -104,6 +201,49 @@ export function TripProvider({ children }: { children: ReactNode }) {
       setSupportsWriteInPlace(
         typeof window !== 'undefined' && 'showOpenFilePicker' in window,
       );
+
+      const config = readConfig();
+      configRef.current = config;
+      setSheetsConfig(config);
+      setPendingOps((await readAll()).length);
+
+      if (config) {
+        setSyncState('dang-dong-bo');
+
+        // Đẩy nốt việc còn nợ TRƯỚC khi kéo về, nếu không bản kéo về sẽ đè
+        // mất những khoản chi ghi lúc mất sóng.
+        let pending = (await readAll()).length;
+        if (pending > 0) {
+          try {
+            await flushQueue();
+          } catch {
+            // Vẫn mất mạng — giữ nguyên hàng đợi
+          }
+          pending = (await readAll()).length;
+          if (cancelled) return;
+          setPendingOps(pending);
+        }
+
+        if (pending === 0) {
+          try {
+            const workbook = await pullWorkbook(config);
+            if (cancelled) return;
+            await applyRemoteWorkbook(workbook);
+            setSyncState('da-dong-bo');
+            return;
+          } catch (thrown) {
+            if (cancelled) return;
+            // Mất mạng hoặc URL sai: chạy tiếp bằng dữ liệu đã cache
+            setSyncError(
+              thrown instanceof Error ? thrown.message : 'Không tải được Google Sheet.',
+            );
+            setSyncState('cho-mang');
+          }
+        } else {
+          setSyncError('Còn thay đổi chưa đẩy lên, đang dùng dữ liệu trong máy.');
+          setSyncState('cho-mang');
+        }
+      }
 
       const cached = await loadCachedWorkbook();
       if (cancelled) return;
@@ -138,7 +278,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [loadBytes]);
+  }, [applyRemoteWorkbook, flushQueue, loadBytes]);
+
+  // Có mạng trở lại thì đẩy nốt những gì đang xếp hàng
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onOnline = () => {
+      if (configRef.current) void syncNow();
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [syncNow]);
 
   /** Ghi expense/selection vào workbook đang giữ và cache lại ngay */
   const syncWorkbook = useCallback((nextExpenses: Expense[], nextSelections: Selection[]) => {
@@ -193,18 +343,19 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const addExpense = useCallback(
     (input: Omit<Expense, 'id' | 'createdAt'>) => {
+      const expense: Expense = {
+        ...input,
+        id: newExpenseId(),
+        createdAt: new Date().toISOString(),
+      };
       setExpenses((current) => {
-        const expense: Expense = {
-          ...input,
-          id: nextExpenseId(current),
-          createdAt: new Date().toISOString(),
-        };
         const next = [...current, expense];
         syncWorkbook(next, selections);
         return next;
       });
+      void queueOp({ type: 'upsert-expense', expense });
     },
-    [selections, syncWorkbook],
+    [queueOp, selections, syncWorkbook],
   );
 
   const updateExpense = useCallback(
@@ -214,40 +365,44 @@ export function TripProvider({ children }: { children: ReactNode }) {
           expense.id === id ? { ...expense, ...patch } : expense,
         );
         syncWorkbook(next, selections);
+        const updated = next.find((expense) => expense.id === id);
+        if (updated) void queueOp({ type: 'upsert-expense', expense: updated });
         return next;
       });
     },
-    [selections, syncWorkbook],
+    [queueOp, selections, syncWorkbook],
   );
 
   const removeExpense = useCallback(
     (id: string) => {
+      void queueOp({ type: 'delete-expense', id });
       setExpenses((current) => {
         const next = current.filter((expense) => expense.id !== id);
         syncWorkbook(next, selections);
         return next;
       });
     },
-    [selections, syncWorkbook],
+    [queueOp, selections, syncWorkbook],
   );
 
   const selectOption = useCallback(
     (activityKey: string, place: string, address?: string) => {
+      const selection: Selection = {
+        activityKey,
+        selectedPlace: place,
+        selectedAddress: address,
+        updatedAt: new Date().toISOString(),
+      };
       setSelections((current) => {
-        const selection: Selection = {
-          activityKey,
-          selectedPlace: place,
-          selectedAddress: address,
-          updatedAt: new Date().toISOString(),
-        };
         const next = current.some((item) => item.activityKey === activityKey)
           ? current.map((item) => (item.activityKey === activityKey ? selection : item))
           : [...current, selection];
         syncWorkbook(expenses, next);
         return next;
       });
+      void queueOp({ type: 'upsert-selection', selection });
     },
-    [expenses, syncWorkbook],
+    [expenses, queueOp, syncWorkbook],
   );
 
   const clearSelection = useCallback(
@@ -257,8 +412,26 @@ export function TripProvider({ children }: { children: ReactNode }) {
         syncWorkbook(expenses, next);
         return next;
       });
+      void queueOp({ type: 'clear-selection', activityKey });
     },
-    [expenses, syncWorkbook],
+    [expenses, queueOp, syncWorkbook],
+  );
+
+  /** Lưu cấu hình Google Sheet rồi kéo dữ liệu về ngay để biết URL có chạy không */
+  const saveSheetsConfig = useCallback(
+    async (config: SheetsConfig | null) => {
+      writeConfig(config);
+      configRef.current = config;
+      setSheetsConfig(config);
+      setSyncError(null);
+
+      if (!config) {
+        setSyncState('tat');
+        return;
+      }
+      await syncNow();
+    },
+    [syncNow],
   );
 
   const exportExcel = useCallback(async () => {
@@ -292,6 +465,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
       selectOption,
       clearSelection,
       exportExcel,
+      sheetsConfig,
+      syncState,
+      syncError,
+      pendingOps,
+      saveSheetsConfig,
+      syncNow,
     }),
     [
       status,
@@ -310,6 +489,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
       selectOption,
       clearSelection,
       exportExcel,
+      sheetsConfig,
+      syncState,
+      syncError,
+      pendingOps,
+      saveSheetsConfig,
+      syncNow,
     ],
   );
 

@@ -5,6 +5,21 @@ bây giờ đang làm gì, đi đâu, tiếp theo là gì, còn bao lâu, và đ
 
 Toàn bộ giao diện bằng tiếng Việt, tối ưu cho khổ máy 390px và 430px.
 
+## Hai chế độ chạy
+
+| | Mặc định — file Excel | Bật đồng bộ — Google Sheet |
+|---|---|---|
+| Nguồn dữ liệu | `public/lich-trinh.xlsx` hoặc file bạn chọn | Google Sheet qua Apps Script Web App |
+| Nhiều máy dùng chung | không | có |
+| Người dùng phải đăng nhập | không | **không** — script chạy bằng quyền chủ sheet |
+| Ghi chi phí khi mất sóng | được | được, xếp hàng rồi tự đẩy khi có mạng |
+| Xuất file `.xlsx` | được | được |
+
+Chưa cấu hình Google Sheet thì app chạy y như chế độ file Excel — đồng bộ là phần cộng thêm,
+bật/tắt bất cứ lúc nào trong thẻ **Đồng bộ Google Sheet** ở tab Lịch trình hoặc Chi phí.
+
+Hướng dẫn cài đặt: [`google-sheets/README.md`](google-sheets/README.md).
+
 ## Nguyên tắc dữ liệu
 
 - **Excel là nguồn dữ liệu duy nhất.** Không hard-code lịch trình trong source code — đổi dữ liệu
@@ -33,7 +48,8 @@ npm install
 npm run dev      # http://localhost:3000
 npm run build
 npm run lint
-npm run smoke    # kiểm thử trên trình duyệt thật (cần dev server đang chạy)
+npm run smoke      # kiểm thử trên trình duyệt thật (cần dev server đang chạy)
+npm run test:sync  # kiểm thử đồng bộ, có server giả lập Google Sheet
 ```
 
 File Excel mặc định app nạp khi mở lần đầu: `public/lich-trinh.xlsx`. Người dùng có thể chọn
