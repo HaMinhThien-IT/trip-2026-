@@ -129,7 +129,7 @@ export default function ExpensesPage() {
         <section>
           <h2 className="mb-3 text-base font-semibold">Theo ngày</h2>
           <ul className="space-y-2">
-            {trip.days.map((day, index) => {
+            {trip.days.map((day) => {
               const dayExpenses = expenses.filter((expense) => expense.date === day.date);
               const dayTotal = totalOf(dayExpenses);
               const expanded = openDate === day.date;
@@ -143,7 +143,7 @@ export default function ExpensesPage() {
                     className="flex min-h-[60px] w-full items-center justify-between gap-3 px-4 text-left"
                   >
                     <span>
-                      <span className="block text-sm font-semibold">Ngày {index + 1}</span>
+                      <span className="block text-sm font-semibold">{day.label}</span>
                       <span className="block text-xs text-muted tabular-nums">{day.date}</span>
                     </span>
                     <span className="text-base font-bold tabular-nums text-primary-dark">

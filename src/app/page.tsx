@@ -31,7 +31,7 @@ export default function TodayPage() {
       <header>
         <h1 className="text-2xl font-bold leading-tight">{trip.name}</h1>
         <p className="text-sm text-muted">
-          Ngày {trip.days.findIndex((item) => item.id === day.id) + 1} · {day.date}
+          {day.label} · {day.date}
         </p>
         {!isRealToday ? (
           <p className="mt-2 rounded-2xl bg-soft-pink px-3 py-2 text-xs leading-relaxed text-primary-dark">

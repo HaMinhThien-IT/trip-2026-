@@ -36,7 +36,7 @@ export default function ItineraryPage() {
 
       {trip.days.length > 1 ? (
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-          {trip.days.map((item, index) => (
+          {trip.days.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -47,7 +47,7 @@ export default function ItineraryPage() {
                   : 'border border-soft-pink bg-white text-muted'
               }`}
             >
-              <span className="block">Ngày {index + 1}</span>
+              <span className="block">{item.label}</span>
               <span className="block text-xs font-medium tabular-nums opacity-80">
                 {item.date}
               </span>
@@ -58,7 +58,9 @@ export default function ItineraryPage() {
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="text-base font-semibold">{day.title}</h2>
+          <h2 className="text-base font-semibold">
+            {day.label} · {day.date}
+          </h2>
           {dayTotal > 0 ? (
             <span className="text-sm font-semibold text-primary-dark tabular-nums">
               {formatVnd(dayTotal)}

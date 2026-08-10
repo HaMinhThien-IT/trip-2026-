@@ -84,6 +84,10 @@ Với file mẫu (`Thời gian · Hoạt động · Địa điểm / Quán · Đ
 - Ngày lấy từ cột thời gian dạng `18:00 (13/07)` và **kế thừa xuống** các dòng sau.
 - Nhiều dòng cùng giờ + cùng tên hoạt động được gom thành **một** hoạt động có nhiều lựa chọn,
   ví dụ 3 dòng `Cafe / nghỉ ngơi` 11:00 → một hoạt động "Chọn 1 trong 3".
+- **Đánh số ngày**: số ngày lấy từ tên sheet (`Ngày 1 - Hội An` → 1) và gán cho ngày chứa
+  nhiều hoạt động nhất trong sheet đó. Ngày đứng trước nó là chặng di chuyển dẫn vào — hiển
+  thị là **Xuất phát**, không mang số. Với file mẫu: 13/07 (chỉ có mốc lên xe đêm) là
+  *Xuất phát*, 14/07 mới là *Ngày 1*. Sheet không ghi số ngày thì đánh số tuần tự.
 - `activityKey` = `ngày_giờ_TÊN_HOẠT_ĐỘNG` — khóa ổn định để nối chi phí lại đúng hoạt động
   sau khi đóng app và import lại file.
 - Data model hỗ trợ nhiều ngày ngay từ đầu, kể cả khi Excel chỉ có một ngày.

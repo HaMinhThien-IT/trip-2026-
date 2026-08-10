@@ -26,7 +26,12 @@ export type Activity = {
 export type Day = {
   id: string;
   date: string;
+  /** Tên sheet chứa ngày này, ví dụ "Ngày 1 · Hội An" */
   title: string;
+  /** Số thứ tự ngày trong chuyến đi; null với chặng đi trước Ngày 1 */
+  dayNumber: number | null;
+  /** Nhãn hiển thị: "Ngày 1" hoặc "Xuất phát" */
+  label: string;
   activities: Activity[];
 };
 

@@ -77,6 +77,23 @@ for (const width of [390, 430]) {
     continue;
   }
 
+  // 3b. Trang Lịch trình: 13/07 chỉ là chặng xuất phát, Ngày 1 mới là 14/07
+  await page.getByRole('link', { name: 'Lịch trình' }).click();
+  await page.getByRole('heading', { level: 1, name: 'Lịch trình' }).waitFor();
+  // Dải chọn ngày (.no-scrollbar) — tránh trùng với các nút trong timeline
+  const chips = page.locator('.no-scrollbar').getByRole('button');
+  const chipLabels = (await chips.allInnerTexts()).map((text) => text.replace(/\n/g, ' '));
+  check('13/07 là chặng Xuất phát', chipLabels[0] === 'Xuất phát 13/07', chipLabels.join(' | '));
+  check('Ngày 1 là 14/07', chipLabels[1] === 'Ngày 1 14/07');
+  check('chỉ có 2 ngày', chipLabels.length === 2, `${chipLabels.length} ngày`);
+  const heading = await page.locator('main h2').first().innerText();
+  check('tiêu đề ngày đang xem là Ngày 1 · 14/07', heading.includes('Ngày 1 · 14/07'), heading);
+  await page.screenshot({ path: `${OUT}/lich-trinh.png`, fullPage: true });
+
+  await page.getByRole('link', { name: 'Hôm nay' }).click();
+  await page.getByRole('heading', { level: 1 }).waitFor();
+  await page.waitForSelector('text=BÂY GIỜ');
+
   // 4. Chọn option cho hoạt động Cafe
   await nextCard.getByRole('button', { name: 'Xem lựa chọn' }).click();
   await page.waitForSelector('text=Chọn 1 trong 3');
