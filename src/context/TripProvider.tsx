@@ -66,19 +66,23 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const workbookRef = useRef<WorkBook | null>(null);
   const handleRef = useRef<FileSystemFileHandle | null>(null);
 
-  const applyWorkbook = useCallback((workbook: WorkBook, name: string) => {
+  const applyWorkbook = useCallback((workbook: WorkBook, name: string, dirty: boolean) => {
     workbookRef.current = workbook;
     setTrip(parseTrip(workbook));
     setExpenses(readExpenses(workbook));
     setSelections(readSelections(workbook));
     setFileName(name);
-    setIsDirty(false);
+    setIsDirty(dirty);
     setError(null);
     setStatus('san-sang');
   }, []);
 
+  /**
+   * `dirty` đi theo workbook: file vừa import khớp với file trên máy nên sạch,
+   * còn workbook khôi phục từ cache có thể đang mang thay đổi chưa xuất ra Excel.
+   */
   const loadBytes = useCallback(
-    async (bytes: ArrayBuffer, name: string, cache = true) => {
+    async (bytes: ArrayBuffer, name: string, { cache = true, dirty = false } = {}) => {
       const workbook = readWorkbook(bytes);
       const parsed = parseTrip(workbook);
       if (parsed.days.length === 0) {
@@ -86,8 +90,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
           'Không đọc được lịch trình trong file. File cần có cột Thời gian và Hoạt động.',
         );
       }
-      applyWorkbook(workbook, name);
-      if (cache) await cacheWorkbook(bytes.slice(0), name);
+      applyWorkbook(workbook, name, dirty);
+      if (cache) await cacheWorkbook(bytes.slice(0), name, dirty);
     },
     [applyWorkbook],
   );
@@ -106,7 +110,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       if (cached) {
         try {
-          await loadBytes(cached.bytes, cached.fileName, false);
+          await loadBytes(cached.bytes, cached.fileName, {
+            cache: false,
+            dirty: cached.dirty ?? false,
+          });
           return;
         } catch {
           // Cache hỏng → rơi về file mặc định
@@ -141,7 +148,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setIsDirty(true);
     import('xlsx').then((XLSX) => {
       const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
-      void cacheWorkbook(bytes, fileName);
+      void cacheWorkbook(bytes, fileName, true);
     });
   }, [fileName]);
 
@@ -260,6 +267,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     writeAppSheets(workbook, expenses, selections);
     const result = await saveWorkbook(workbook, handleRef.current, fileName);
     setIsDirty(false);
+    // Cache phải hết dirty theo, nếu không lần mở lại sẽ báo nhầm "chưa lưu"
+    const XLSX = await import('xlsx');
+    const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    await cacheWorkbook(bytes, fileName, false);
     return result;
   }, [expenses, fileName, selections]);
 
