@@ -55,6 +55,20 @@ npm run test:sync  # kiểm thử đồng bộ, có server giả lập Google Sh
 File Excel mặc định app nạp khi mở lần đầu: `public/lich-trinh.xlsx`. Người dùng có thể chọn
 file Excel khác bằng nút **Chọn file Excel**.
 
+## Cài lên màn hình chính
+
+App có manifest và icon nên **Thêm vào màn hình chính** sẽ mở toàn màn hình, không còn thanh
+địa chỉ và thanh công cụ của trình duyệt.
+
+- **iPhone (Safari)**: nút Chia sẻ → *Thêm vào MH chính*. iOS ghi nhớ cấu hình ngay lúc thêm,
+  nên nếu trước đó đã thêm bản chưa có manifest thì phải **xoá icon cũ rồi thêm lại**.
+- **Android (Chrome)**: menu ⋮ → *Cài đặt ứng dụng*.
+
+Icon sinh bằng `node scripts/make-icons.mjs` (dùng Chromium để chụp, không cần công cụ ảnh).
+
+> Chưa có service worker, nên app vẫn cần mạng ở lần mở đầu tiên. Chi phí đã ghi thì nằm
+> trong máy và ghi tiếp được khi mất sóng.
+
 ## Deploy
 
 App chạy hoàn toàn phía client (đọc/ghi Excel ngay trong trình duyệt, không có backend)
