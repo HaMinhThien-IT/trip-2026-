@@ -208,6 +208,15 @@ const page2Text = await page2.locator('main').innerText();
 check('máy thứ hai thấy chung chi phí', page2Text.includes('180.000đ'), page2Text.split('\n').slice(0, 6).join(' / '));
 await page2.screenshot({ path: `${OUT}/may-thu-hai.png`, fullPage: true });
 
+// 8b. Ngắt đồng bộ phải "dính" — cấu hình sẵn lúc build không được bật lại
+await page2.getByRole('button', { name: 'Cài đặt' }).click();
+await page2.getByRole('button', { name: /Ngắt đồng bộ/ }).click();
+await page2.waitForSelector('text=Chưa bật');
+await page2.goto(`${BASE}/chi-phi/`, { waitUntil: 'networkidle' });
+const afterOff = await page2.locator('section', { hasText: 'Đồng bộ Google Sheet' }).innerText();
+check('ngắt đồng bộ vẫn tắt sau khi mở lại', afterOff.includes('Chưa bật'), afterOff.replace(/\n/g, ' '));
+await ctx2.close();
+
 // 9. Xóa chi phí cũng đồng bộ
 await page.goto(`${BASE}/chi-phi/`, { waitUntil: 'networkidle' });
 await page.getByRole('button', { name: /14\/07/ }).first().click();

@@ -10,22 +10,56 @@ export type SheetsConfig = {
 
 const STORAGE_KEY = 'trip.sheets.config';
 
+/**
+ * Cấu hình sẵn lúc build để người dùng không phải gõ gì.
+ *
+ * URL nằm thẳng trong source được: không có token thì script từ chối, nên URL
+ * một mình vô hại. TOKEN thì lấy từ biến môi trường và KHÔNG commit vào repo
+ * — repo này công khai.
+ *
+ * Lưu ý thật: biến NEXT_PUBLIC_* bị nhúng vào file JS gửi xuống trình duyệt,
+ * nên ai mở DevTools trên trang đã deploy đều đọc được token. Với app tĩnh
+ * không có backend thì không có cách nào giấu được. Token chặn người tình cờ
+ * biết URL, không chặn người xem mã nguồn trang.
+ */
+export const DEFAULT_URL =
+  process.env.NEXT_PUBLIC_SHEETS_URL ??
+  'https://script.google.com/macros/s/AKfycbxdWy5PDXJPfplIRGon77YCmqz2GsfTeNdgWlWwxBCjDANCmBMKDS8lWomCaZ1zmHZT/exec';
+
+export const DEFAULT_TOKEN = process.env.NEXT_PUBLIC_SHEETS_TOKEN ?? '';
+
+function defaultConfig(): SheetsConfig | null {
+  if (!DEFAULT_URL || !DEFAULT_TOKEN) return null;
+  return { url: DEFAULT_URL, token: DEFAULT_TOKEN };
+}
+
+export function hasDefaultConfig(): boolean {
+  return defaultConfig() !== null;
+}
+
+type StoredConfig = Partial<SheetsConfig> & { off?: boolean };
+
+/** Cấu hình người dùng tự nhập > cấu hình sẵn lúc build */
 export function readConfig(): SheetsConfig | null {
-  if (typeof localStorage === 'undefined') return null;
+  if (typeof localStorage === 'undefined') return defaultConfig();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SheetsConfig>;
-    if (!parsed.url) return null;
+    if (!raw) return defaultConfig();
+
+    const parsed = JSON.parse(raw) as StoredConfig;
+    // Người dùng đã chủ động tắt: đừng để cấu hình sẵn bật lại
+    if (parsed.off) return null;
+    if (!parsed.url) return defaultConfig();
     return { url: parsed.url, token: parsed.token ?? '' };
   } catch {
-    return null;
+    return defaultConfig();
   }
 }
 
 export function writeConfig(config: SheetsConfig | null): void {
   if (typeof localStorage === 'undefined') return;
-  if (config === null) localStorage.removeItem(STORAGE_KEY);
+  // Ghi cờ tắt thay vì xóa, nếu không cấu hình sẵn sẽ bật lại ở lần mở sau
+  if (config === null) localStorage.setItem(STORAGE_KEY, JSON.stringify({ off: true }));
   else localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
 }
 

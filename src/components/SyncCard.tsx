@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { useTrip } from '@/context/TripProvider';
+import { DEFAULT_URL } from '@/services/sheetsService';
 import { BottomSheet } from './BottomSheet';
 
 const STATE_TEXT: Record<string, string> = {
@@ -16,7 +17,8 @@ const STATE_TEXT: Record<string, string> = {
 export function SyncCard() {
   const { sheetsConfig, syncState, syncError, pendingOps, saveSheetsConfig, syncNow } = useTrip();
   const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState(sheetsConfig?.url ?? '');
+  // URL đã cấu hình sẵn lúc build nên chỉ cần điền token
+  const [url, setUrl] = useState(sheetsConfig?.url ?? DEFAULT_URL);
   const [token, setToken] = useState(sheetsConfig?.token ?? '');
   const [busy, setBusy] = useState(false);
 
