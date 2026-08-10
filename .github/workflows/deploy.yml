@@ -1,0 +1,62 @@
+name: Deploy lên GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cho phép workflow publish lên Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Chỉ chạy một lượt deploy tại một thời điểm
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Kiểm tra kiểu và lint
+        run: |
+          npx tsc --noEmit
+          npm run lint
+
+      - name: Build bản tĩnh
+        # GitHub Pages phục vụ site dự án dưới /<tên-repo>
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+
+      - name: Chặn Jekyll xử lý thư mục _next
+        run: touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -25,7 +25,8 @@ import { nextExpenseId } from '@/services/expenseService';
 import { cacheWorkbook, loadCachedWorkbook } from '@/services/workbookCache';
 
 /** File Excel mặc định đi kèm app, người dùng vẫn có thể import file khác */
-const DEFAULT_WORKBOOK_URL = '/lich-trinh.xlsx';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const DEFAULT_WORKBOOK_URL = `${BASE_PATH}/lich-trinh.xlsx`;
 const DEFAULT_WORKBOOK_NAME = 'lich-trinh.xlsx';
 
 type Status = 'dang-tai' | 'san-sang' | 'loi';

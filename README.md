@@ -39,6 +39,25 @@ npm run smoke    # kiểm thử trên trình duyệt thật (cần dev server đ
 File Excel mặc định app nạp khi mở lần đầu: `public/lich-trinh.xlsx`. Người dùng có thể chọn
 file Excel khác bằng nút **Chọn file Excel**.
 
+## Deploy
+
+App chạy hoàn toàn phía client (đọc/ghi Excel ngay trong trình duyệt, không có backend)
+nên xuất tĩnh được — `next build` sinh thư mục `out/`.
+
+**GitHub Pages** (đã cấu hình sẵn): mỗi lần push lên `main`, workflow
+`.github/workflows/deploy.yml` tự build và publish. Lần chạy đầu tiên workflow tự bật
+Pages cho repo. Link sau khi deploy:
+
+```
+https://haminhthien-it.github.io/trip-2026-/
+```
+
+Nếu lần chạy đầu báo lỗi quyền, vào **Settings → Pages → Source** chọn **GitHub Actions**
+rồi chạy lại workflow.
+
+**Vercel** (nếu muốn dùng thay): import repo trên vercel.com, Vercel tự nhận diện Next.js,
+không cần chỉnh gì thêm — `NEXT_PUBLIC_BASE_PATH` để trống nên app chạy ở đường dẫn gốc.
+
 ## Cấu trúc
 
 ```
