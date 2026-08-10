@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #f472b6;
+  --color-primary-dark: #db2777;
+  --color-soft-pink: #fce7f3;
+  --color-app-bg: #fff7fa;
+  --color-ink: #27272a;
+  --color-muted: #71717a;
+
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background-color: var(--color-app-bg);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  /* App chỉ tối ưu mobile — khung nội dung luôn giới hạn bề ngang điện thoại */
+  overscroll-behavior-y: none;
+}
+
+/* Ẩn thanh cuộn ngang của dải chọn ngày */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

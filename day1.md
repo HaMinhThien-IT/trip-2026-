@@ -25,4 +25,4 @@
 - 14:00–19:00 là thời gian tự do dạo Phố cổ Hội An, có thể tùy chọn đi thuyền thả hoa đăng (~180.000đ).
 - Buổi tối kết thúc bằng show thực cảnh **Ký Ức Hội An** tại 200 Nguyễn Tri Phương, Hội An (20:00).
 
-*Nguồn dữ liệu gốc: [`data/lich-trinh-ngay-1-da-nang-hoi-an.xlsx`](data/lich-trinh-ngay-1-da-nang-hoi-an.xlsx)*
+*Nguồn dữ liệu gốc: [`public/lich-trinh.xlsx`](public/lich-trinh.xlsx)*
