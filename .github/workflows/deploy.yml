@@ -1,8 +1,8 @@
 name: Deploy lên GitHub Pages
 
+# Dự án deploy bằng Vercel. Workflow này giữ lại như đường lui sang GitHub Pages,
+# chỉ chạy khi bấm tay để không báo lỗi ở mỗi lần push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Cho phép workflow publish lên Pages

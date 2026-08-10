@@ -44,21 +44,21 @@ file Excel khác bằng nút **Chọn file Excel**.
 App chạy hoàn toàn phía client (đọc/ghi Excel ngay trong trình duyệt, không có backend)
 nên xuất tĩnh được — `next build` sinh thư mục `out/`.
 
-**GitHub Pages** (đã cấu hình sẵn): mỗi lần push lên `main`, workflow
-`.github/workflows/deploy.yml` tự build và publish.
+**Vercel** (cách đang dùng): import repo `HaMinhThien-IT/trip-2026-` trên vercel.com.
+Vercel tự nhận diện Next.js — không cần đặt biến môi trường hay đổi build command:
 
-> **Cần làm một lần trước khi deploy chạy được:** vào **Settings → Pages → Source**
-> chọn **GitHub Actions**. Token của workflow không có quyền tự bật Pages, nên lần chạy
-> đầu sẽ dừng ở bước `configure-pages` cho tới khi bật thủ công.
+| Mục | Giá trị |
+|---|---|
+| Framework Preset | Next.js (tự nhận) |
+| Build Command | `npm run build` (mặc định) |
+| Output Directory | để mặc định |
+| Environment Variables | không cần — `NEXT_PUBLIC_BASE_PATH` để trống nên app chạy ở `/` |
 
-Link sau khi deploy:
+Mỗi lần push lên `main` là Vercel tự deploy lại.
 
-```
-https://haminhthien-it.github.io/trip-2026-/
-```
-
-**Vercel** (nếu muốn dùng thay): import repo trên vercel.com, Vercel tự nhận diện Next.js,
-không cần chỉnh gì thêm — `NEXT_PUBLIC_BASE_PATH` để trống nên app chạy ở đường dẫn gốc.
+**GitHub Pages** (đường lui): workflow `.github/workflows/deploy.yml` vẫn còn nhưng chỉ chạy
+khi bấm tay ở tab Actions. Trước khi chạy, phải vào **Settings → Pages → Source** chọn
+**GitHub Actions** một lần — token của workflow không có quyền tự bật Pages.
 
 ## Cấu trúc
 
